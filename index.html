@@ -1,0 +1,134 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Amadeus</title>
+<meta name="theme-color" content="#242424">
+<meta name="color-scheme" content="dark">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Amadeus">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon-192.png">
+<link rel="apple-touch-icon" href="apple-touch-icon.png">
+<style>
+  :root {
+    --bg: #242424;
+    --panel: #2b2b2b;
+    --tabbar: #4a4a4a;
+    --tab-active: #1f6aa5;
+    --text: #dce4ee;
+    --radius: 10px;
+  }
+  * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+  html, body { margin: 0; background: var(--bg); color: var(--text); }
+  body {
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+    min-height: 100dvh;
+    padding: max(16px, env(safe-area-inset-top)) max(16px, env(safe-area-inset-right))
+             max(16px, env(safe-area-inset-bottom)) max(16px, env(safe-area-inset-left));
+  }
+  main { max-width: 600px; margin: 0 auto; }
+  h1 { font-size: 24px; text-align: center; margin: 8px 0 20px; }
+
+  /* Вкладки: листаются вбок, если не помещаются */
+  .tabs {
+    display: flex; gap: 2px; padding: 4px; margin: 0 auto 12px;
+    background: var(--tabbar); border-radius: var(--radius);
+    overflow-x: auto; scrollbar-width: none; width: fit-content; max-width: 100%;
+  }
+  .tabs::-webkit-scrollbar { display: none; }
+  .tab {
+    flex: none; border: 0; border-radius: 7px; padding: 8px 10px;
+    background: transparent; color: var(--text);
+    font-family: inherit; font-size: 15px; font-weight: 600; white-space: nowrap; cursor: pointer;
+  }
+  .tab[aria-selected="true"] { background: var(--tab-active); color: #fff; }
+
+  .panel {
+    background: var(--panel); border-radius: var(--radius);
+    padding: 14px; min-height: 60vh; touch-action: pan-y;
+  }
+  .grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 10px; }
+  @media (min-width: 520px) { .grid { grid-template-columns: repeat(3, 1fr); } }
+
+  .btn {
+    display: flex; align-items: center; justify-content: center; text-align: center;
+    min-height: 56px; padding: 8px; border-radius: 8px;
+    color: #fff; font-weight: 700; font-size: 15px; text-decoration: none;
+    transition: transform .08s, filter .08s;
+  }
+  .btn:active { transform: scale(.96); filter: brightness(.9); }
+  .btn:focus-visible { outline: 3px solid #fff; outline-offset: 2px; }
+  .hint { text-align: center; opacity: .45; font-size: 13px; margin-top: 14px; }
+</style>
+</head>
+<body>
+<main>
+  <h1>🚀 Быстрый доступ</h1>
+  <nav class="tabs" role="tablist" id="tabs"></nav>
+  <section class="panel" id="panel" role="tabpanel">
+    <div class="grid" id="grid"></div>
+  </section>
+  <p class="hint">Смахните влево или вправо, чтобы сменить вкладку</p>
+</main>
+<script>
+const TABS = [{"label": "🤖 AI", "services": [{"name": "💬 ChatGPT", "url": "https://chat.openai.com", "color": "#10A37F"}, {"name": "🧠 DeepSeek", "url": "https://chat.deepseek.com", "color": "#4D6BFE"}, {"name": "🌟 Gemini", "url": "https://gemini.google.com", "color": "#4285F4"}, {"name": "🎯 Claude", "url": "https://claude.ai", "color": "#D97757"}]}, {"label": "📧 Почта", "services": [{"name": "📧 Gmail", "url": "https://mail.google.com", "color": "#EA4335"}, {"name": "📧 Mail.ru", "url": "https://mail.mail.ru", "color": "#005FF9"}, {"name": "📧 Почта ТПУ", "url": "https://mail2.tpu.ru", "color": "#27AE60"}]}, {"label": "🌐 Сервисы", "services": [{"name": "📅 Расписание ТПУ", "url": "https://ro-rasp.tpu.ru/gruppa_44514/2026/1/view.html", "color": "#FF6B35"}, {"name": "📚 Google Диск", "url": "https://drive.google.com", "color": "#B8860B"}, {"name": "📺 YouTube", "url": "https://www.youtube.com", "color": "#FF0000"}]}, {"label": "🎮 Игры", "services": [{"name": "♟ Lichess", "url": "https://lichess.org", "color": "#2C3E50"}, {"name": "♚ Chess.com", "url": "https://chess.com", "color": "#7F8C8D"}]}];
+
+const tabsEl = document.getElementById("tabs");
+const gridEl = document.getElementById("grid");
+let current = 0;
+try { current = Math.min(+localStorage.getItem("tab") || 0, TABS.length - 1); } catch (e) {}
+
+TABS.forEach((tab, i) => {
+  const b = document.createElement("button");
+  b.className = "tab";
+  b.role = "tab";
+  b.textContent = tab.label;
+  b.onclick = () => show(i);
+  tabsEl.appendChild(b);
+});
+
+function show(i) {
+  current = (i + TABS.length) % TABS.length;
+  try { localStorage.setItem("tab", current); } catch (e) {}
+  [...tabsEl.children].forEach((b, j) => b.setAttribute("aria-selected", j === current));
+  tabsEl.children[current].scrollIntoView({ inline: "center", block: "nearest" });
+  gridEl.innerHTML = "";
+  for (const s of TABS[current].services) {
+    const a = document.createElement("a");
+    a.className = "btn";
+    a.href = s.url;
+    a.target = "_blank";
+    a.rel = "noopener";
+    a.style.background = s.color;
+    a.textContent = s.name;
+    gridEl.appendChild(a);
+  }
+}
+
+// Смахивание пальцем по панели — соседняя вкладка
+let startX = null, startY = null;
+const panel = document.getElementById("panel");
+panel.addEventListener("touchstart", e => { startX = e.touches[0].clientX; startY = e.touches[0].clientY; }, { passive: true });
+panel.addEventListener("touchend", e => {
+  if (startX === null) return;
+  const dx = e.changedTouches[0].clientX - startX, dy = e.changedTouches[0].clientY - startY;
+  if (Math.abs(dx) > 60 && Math.abs(dx) > Math.abs(dy) * 1.5) show(current + (dx < 0 ? 1 : -1));
+  startX = null;
+});
+
+// Стрелки влево/вправо на компьютере
+document.addEventListener("keydown", e => {
+  if (e.key === "ArrowRight") show(current + 1);
+  if (e.key === "ArrowLeft") show(current - 1);
+});
+
+show(current);
+
+if ("serviceWorker" in navigator) navigator.serviceWorker.register("sw.js").catch(() => {});
+</script>
+</body>
+</html>
